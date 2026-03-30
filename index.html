@@ -320,6 +320,77 @@
     padding-left: 0.6rem;
   }
 
+  /* ── Mobile ── */
+  @media (max-width: 768px) {
+    .main {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 1fr auto;
+      padding: 0.6rem;
+      height: auto;
+      min-height: calc(100vh - 60px);
+    }
+
+    .sidebar { display: none; }
+
+    .chat-wrapper {
+      height: 60vh;
+      margin: 0 0 0.6rem 0;
+      order: 1;
+    }
+
+    .map-panel {
+      height: 35vh;
+      padding-left: 0;
+      order: 2;
+    }
+
+    #map { min-height: 200px; }
+
+    .district-info { min-height: 60px; padding: 0.6rem 0.8rem; }
+
+    .bubble { max-width: 88%; }
+
+    .messages { padding: 0.8rem; }
+
+    .input-area { padding: 0.7rem; }
+
+    /* Mobile quick queries bar */
+    .mobile-queries {
+      display: flex;
+      gap: 0.4rem;
+      overflow-x: auto;
+      padding: 0.5rem 0.6rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 0.6rem;
+      order: 0;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .mobile-queries::-webkit-scrollbar { display: none; }
+
+    .mobile-query-btn {
+      white-space: nowrap;
+      background: var(--forest);
+      color: var(--white);
+      border: none;
+      border-radius: 20px;
+      padding: 0.4rem 0.9rem;
+      font-size: 0.75rem;
+      font-family: 'Source Sans 3', sans-serif;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .mobile-query-btn:active { opacity: 0.8; }
+  }
+
+  @media (min-width: 769px) {
+    .mobile-queries { display: none; }
+  }
+
   .map-panel > div:first-child {
     padding: 0.9rem 1.2rem;
     border-bottom: 1px solid var(--border);
@@ -392,6 +463,15 @@
 </header>
 
 <div class="main">
+
+  <!-- Mobile quick queries bar -->
+  <div class="mobile-queries">
+    <button class="mobile-query-btn" onclick="sendQuick(this)">🌾 Mysuru kharif crops?</button>
+    <button class="mobile-query-btn" onclick="sendQuick(this)">🐛 Grey spots on ragi?</button>
+    <button class="mobile-query-btn" onclick="sendQuick(this)">🌦️ Dharwad this week?</button>
+    <button class="mobile-query-btn" onclick="sendQuick(this)">💰 Cotton price Dharwad?</button>
+    <button class="mobile-query-btn" onclick="sendQuick(this)">🥭 Mango in Ramanagara?</button>
+  </div>
 
   <!-- Sidebar -->
   <aside class="sidebar">
