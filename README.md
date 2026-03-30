@@ -1,2 +1,2 @@
 # agri-advisor
-Demo agent app showcasing insights about farming in karnataka major districts
+Karnataka Agricultural Advisory Agent — built with Google ADK, Gemini 2.5 Flash, Cloud Run. GenAI Academy APAC Hackathon 2026.
