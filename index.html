@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Karnataka Agri Advisor</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root {
+    --forest:   #1B4332;
+    --moss:     #2D6A4F;
+    --leaf:     #52B788;
+    --mint:     #95D5B2;
+    --cream:    #F8F4E3;
+    --sand:     #E9C46A;
+    --charcoal: #1A1A1A;
+    --muted:    #6B7280;
+    --white:    #FFFFFF;
+    --card-bg:  #FFFEF8;
+    --border:   #D1E8D8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Source Sans 3', sans-serif;
+    background: var(--cream);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    color: var(--charcoal);
+  }
+
+  header {
+    background: var(--forest);
+    padding: 0 2rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.25);
+  }
+
+  .header-left { display: flex; align-items: center; gap: 0.75rem; }
+
+  .logo-icon {
+    width: 34px; height: 34px;
+    background: var(--leaf);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px;
+  }
+
+  .header-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem; color: var(--white);
+  }
+
+  .header-subtitle {
+    font-size: 0.68rem; color: var(--mint);
+    letter-spacing: 0.05em; text-transform: uppercase;
+  }
+
+  .status-badge {
+    display: flex; align-items: center; gap: 0.4rem;
+    background: rgba(82,183,136,0.15);
+    border: 1px solid rgba(82,183,136,0.3);
+    border-radius: 20px; padding: 0.28rem 0.75rem;
+    font-size: 0.72rem; color: var(--mint); font-weight: 500;
+  }
+
+  .status-dot {
+    width: 7px; height: 7px;
+    background: var(--leaf); border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity:1; transform:scale(1); }
+    50% { opacity:0.5; transform:scale(0.85); }
+  }
+
+  /* ── Main Layout ── */
+  .main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 260px 1fr 380px;
+    gap: 0;
+    padding: 1.2rem;
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
+    height: calc(100vh - 60px);
+  }
+
+  /* ── Sidebar ── */
+  .sidebar { padding-right: 1rem; display: flex; flex-direction: column; gap: 0.8rem; overflow-y: auto; }
+
+  .sidebar-section {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+  }
+
+  .sidebar-title {
+    font-size: 0.65rem; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--muted);
+    font-weight: 600; margin-bottom: 0.7rem;
+  }
+
+  .quick-btn {
+    width: 100%; text-align: left;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 0.55rem 0.75rem;
+    font-size: 0.78rem; color: var(--moss);
+    cursor: pointer; margin-bottom: 0.35rem;
+    font-family: 'Source Sans 3', sans-serif;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    line-height: 1.3;
+  }
+
+  .quick-btn:hover {
+    background: var(--forest); color: var(--mint);
+    border-color: var(--forest); transform: translateX(2px);
+  }
+
+  .tool-pill {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    background: rgba(45,106,79,0.08);
+    border: 1px solid var(--border);
+    border-radius: 20px; padding: 0.22rem 0.55rem;
+    font-size: 0.7rem; color: var(--moss);
+    margin: 0.2rem 0.15rem 0 0; font-weight: 500;
+  }
+
+  /* ── Chat ── */
+  .chat-wrapper {
+    display: flex; flex-direction: column;
+    height: calc(100vh - 60px - 2.4rem);
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(27,67,50,0.08);
+    margin: 0 0.6rem;
+  }
+
+  .chat-header {
+    padding: 0.9rem 1.4rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, var(--forest) 0%, var(--moss) 100%);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .chat-header-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.95rem; color: var(--white);
+  }
+
+  .chat-header-sub { font-size: 0.72rem; color: var(--mint); margin-top: 0.08rem; }
+
+  .new-session-btn {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px; color: var(--white);
+    padding: 0.3rem 0.75rem; font-size: 0.72rem;
+    cursor: pointer; font-family: 'Source Sans 3', sans-serif;
+    transition: all 0.15s;
+  }
+
+  .new-session-btn:hover { background: rgba(255,255,255,0.2); }
+
+  .messages {
+    flex: 1; overflow-y: auto;
+    padding: 1.2rem; display: flex;
+    flex-direction: column; gap: 1rem;
+    scroll-behavior: smooth;
+  }
+
+  .messages::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar-track { background: transparent; }
+  .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .welcome {
+    text-align: center; padding: 1.5rem 1rem;
+    animation: fadeUp 0.5s ease;
+  }
+
+  .welcome-icon { font-size: 2.5rem; margin-bottom: 0.6rem; }
+
+  .welcome h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem; color: var(--forest); margin-bottom: 0.4rem;
+  }
+
+  .welcome p { font-size: 0.85rem; color: var(--muted); max-width: 320px; margin: 0 auto; line-height: 1.6; }
+
+  .message { display: flex; gap: 0.65rem; animation: fadeUp 0.3s ease; }
+
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(10px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+
+  .message.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex-shrink: 0; margin-top: 2px;
+  }
+
+  .avatar.agent { background: var(--forest); }
+  .avatar.user  { background: var(--sand); }
+
+  .bubble {
+    max-width: 72%; padding: 0.75rem 1rem;
+    border-radius: 14px; font-size: 0.87rem; line-height: 1.6;
+  }
+
+  .bubble.agent {
+    background: var(--white); border: 1px solid var(--border);
+    border-bottom-left-radius: 4px; color: var(--charcoal);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+
+  .bubble.user {
+    background: var(--forest); color: var(--white);
+    border-bottom-right-radius: 4px;
+  }
+
+  .tool-call {
+    display: flex; align-items: center; gap: 0.35rem;
+    font-size: 0.7rem; color: var(--moss);
+    font-family: 'JetBrains Mono', monospace;
+    background: rgba(45,106,79,0.06);
+    border: 1px dashed var(--border);
+    border-radius: 8px; padding: 0.35rem 0.65rem;
+    width: fit-content; animation: fadeUp 0.3s ease;
+  }
+
+  .typing {
+    display: flex; align-items: center; gap: 0.35rem;
+    padding: 0.65rem 0.9rem;
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 14px; border-bottom-left-radius: 4px;
+    width: fit-content; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+
+  .typing span {
+    width: 6px; height: 6px;
+    background: var(--leaf); border-radius: 50%;
+    animation: bounce 1.2s infinite;
+  }
+
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%,80%,100% { transform:translateY(0); opacity:0.6; }
+    40% { transform:translateY(-5px); opacity:1; }
+  }
+
+  .input-area {
+    padding: 0.9rem 1.2rem;
+    border-top: 1px solid var(--border);
+    background: var(--card-bg);
+  }
+
+  .input-row { display: flex; gap: 0.65rem; align-items: flex-end; }
+
+  textarea {
+    flex: 1; border: 1.5px solid var(--border);
+    border-radius: 12px; padding: 0.7rem 0.9rem;
+    font-size: 0.87rem; font-family: 'Source Sans 3', sans-serif;
+    resize: none; min-height: 44px; max-height: 110px;
+    background: var(--white); color: var(--charcoal);
+    transition: border-color 0.15s; line-height: 1.5;
+  }
+
+  textarea:focus { outline: none; border-color: var(--moss); box-shadow: 0 0 0 3px rgba(45,106,79,0.08); }
+  textarea::placeholder { color: #B0B8C1; }
+
+  .send-btn {
+    width: 44px; height: 44px;
+    background: var(--forest); border: none;
+    border-radius: 12px; color: var(--white);
+    font-size: 1rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; flex-shrink: 0;
+  }
+
+  .send-btn:hover { background: var(--moss); transform: scale(1.05); }
+  .send-btn:disabled { background: var(--border); cursor: not-allowed; transform: none; }
+
+  .input-hint { font-size: 0.67rem; color: var(--muted); margin-top: 0.4rem; text-align: center; }
+
+  .error-bubble {
+    background: #FEF2F2; border: 1px solid #FECACA;
+    border-radius: 10px; padding: 0.65rem 0.9rem;
+    font-size: 0.8rem; color: #DC2626; max-width: 72%;
+  }
+
+  /* ── Map Panel ── */
+  .map-panel {
+    display: flex; flex-direction: column;
+    height: calc(100vh - 60px - 2.4rem);
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px; overflow: hidden;
+    box-shadow: 0 4px 24px rgba(27,67,50,0.08);
+    padding-left: 0.6rem;
+  }
+
+  .map-panel > div:first-child {
+    padding: 0.9rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, var(--moss) 0%, var(--leaf) 100%);
+  }
+
+  .map-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.95rem; color: var(--white);
+  }
+
+  .map-subtitle { font-size: 0.7rem; color: rgba(255,255,255,0.8); margin-top: 0.05rem; }
+
+  #map { flex: 1; width: 100%; min-height: 0; }
+
+  .district-info {
+    padding: 0.8rem 1rem;
+    border-top: 1px solid var(--border);
+    background: var(--card-bg);
+    min-height: 90px;
+  }
+
+  .district-info-title {
+    font-size: 0.7rem; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--muted);
+    margin-bottom: 0.4rem; font-weight: 600;
+  }
+
+  .district-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+
+  .district-chip {
+    background: rgba(45,106,79,0.08);
+    border: 1px solid var(--border);
+    border-radius: 20px; padding: 0.2rem 0.6rem;
+    font-size: 0.72rem; color: var(--moss); font-weight: 500;
+  }
+
+  .district-chip.soil {
+    background: rgba(233,196,106,0.15);
+    border-color: rgba(233,196,106,0.4);
+    color: #92400E;
+  }
+
+  .district-chip.season {
+    background: rgba(27,67,50,0.08);
+    border-color: rgba(27,67,50,0.2);
+    color: var(--forest);
+  }
+
+  .no-district {
+    font-size: 0.8rem; color: var(--muted);
+    font-style: italic; line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo-icon">🌾</div>
+    <div>
+      <div class="header-title">Karnataka Agri Advisor</div>
+      <div class="header-subtitle">ADK · Gemini 2.5 Flash · Vector Search · OpenStreetMap</div>
+    </div>
+  </div>
+  <div class="status-badge">
+    <div class="status-dot"></div>
+    Live on Cloud Run
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-title">Try these queries</div>
+      <button class="quick-btn" onclick="sendQuick(this)">🌾 What crops should I grow in Mysuru during kharif season?</button>
+      <button class="quick-btn" onclick="sendQuick(this)">🐛 My ragi crop has grey spots on the leaves. What disease is this?</button>
+      <button class="quick-btn" onclick="sendQuick(this)">🌦️ What should I grow in Dharwad this week?</button>
+      <button class="quick-btn" onclick="sendQuick(this)">💰 What are current cotton prices in Dharwad?</button>
+      <button class="quick-btn" onclick="sendQuick(this)">🥭 What about mango farming in Ramanagara?</button>
+      <button class="quick-btn" onclick="sendQuick(this)">🪨 What fertilizer for black cotton soil in Belagavi?</button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">Available Tools</div>
+      <span class="tool-pill">🔍 Vector Search</span>
+      <span class="tool-pill">🌦️ Live Weather</span>
+      <span class="tool-pill">💰 Mandi Prices</span>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">Coverage</div>
+      <div style="font-size:0.78rem; color:var(--charcoal); line-height:1.8;">
+        🗺️ North Karnataka<br>
+        🗺️ South Karnataka<br>
+        🗺️ Coastal Karnataka<br>
+        🗺️ Hyderabad-Karnataka<br>
+        <span style="color:var(--muted); font-size:0.7rem;">Kharif · Rabi · Zaid seasons</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Chat -->
+  <div class="chat-wrapper">
+    <div class="chat-header">
+      <div>
+        <div class="chat-header-title">Ask your farming question</div>
+        <div class="chat-header-sub">Specialised for Karnataka · Responds in seconds</div>
+      </div>
+      <button class="new-session-btn" onclick="newSession()">↺ New Chat</button>
+    </div>
+
+    <div class="messages" id="messages">
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon">🌱</div>
+        <h2>Namaskara, farmer friend!</h2>
+        <p>Ask about crops, pests, soil, weather or prices. Mention a district and watch the map zoom in automatically.</p>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-row">
+        <textarea id="input" placeholder="Type your farming question... e.g. What crops for Mysuru in kharif?" rows="1"
+          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+      </div>
+      <div class="input-hint">Press Enter to send · Shift+Enter for new line</div>
+    </div>
+  </div>
+
+  <!-- Map Panel -->
+  <div class="map-panel">
+    <div>
+      <div class="map-title">🗺️ Karnataka District Map</div>
+      <div class="map-subtitle" id="mapSubtitle">Mention a district to zoom in automatically</div>
+    </div>
+    <div id="map"></div>
+    <div class="district-info">
+      <div class="district-info-title">District Context</div>
+      <div id="districtInfo">
+        <div class="no-district">Ask about a specific district to see soil type, agro-climatic zone, and key crops here.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const API = "https://karnataka-agri-advisor-377703486067.asia-south1.run.app";
+  const APP = "karnataka_agri_advisor";
+  const USER = "demo_user";
+
+  let sessionId = null;
+
+  // ── District data ──────────────────────────────────────────────────────────
+  const DISTRICTS = {
+    "bengaluru":         { lat: 12.97, lon: 77.59, zoom: 11, soil: "Red Laterite", zone: "South Karnataka", crops: ["Ragi", "Groundnut", "Tomato", "Mulberry"] },
+    "mysuru":            { lat: 12.30, lon: 76.65, zoom: 11, soil: "Alluvial",     zone: "South Karnataka", crops: ["Ragi", "Maize", "Paddy", "Sugarcane"] },
+    "mandya":            { lat: 12.52, lon: 76.90, zoom: 11, soil: "Alluvial",     zone: "South Karnataka", crops: ["Paddy", "Sugarcane", "Banana"] },
+    "hassan":            { lat: 13.00, lon: 76.10, zoom: 11, soil: "Alluvial",     zone: "South Karnataka", crops: ["Potato", "Ragi", "Maize"] },
+    "tumkur":            { lat: 13.34, lon: 77.10, zoom: 11, soil: "Red Laterite", zone: "South Karnataka", crops: ["Ragi", "Groundnut", "Coconut"] },
+    "kolar":             { lat: 13.14, lon: 78.13, zoom: 11, soil: "Red Laterite", zone: "South Karnataka", crops: ["Ragi", "Tomato", "Mango"] },
+    "ramanagara":        { lat: 12.72, lon: 77.28, zoom: 11, soil: "Red Laterite", zone: "South Karnataka", crops: ["Mango", "Mulberry", "Ragi", "Silk"] },
+    "dharwad":           { lat: 15.46, lon: 75.01, zoom: 11, soil: "Black Cotton", zone: "North Karnataka", crops: ["Cotton", "Soybean", "Tur", "Sunflower"] },
+    "belagavi":          { lat: 15.85, lon: 74.50, zoom: 11, soil: "Black Cotton", zone: "North Karnataka", crops: ["Cotton", "Soybean", "Wheat"] },
+    "gadag":             { lat: 15.42, lon: 75.62, zoom: 11, soil: "Black Cotton", zone: "North Karnataka", crops: ["Cotton", "Sunflower", "Tur"] },
+    "haveri":            { lat: 14.79, lon: 75.40, zoom: 11, soil: "Black Cotton", zone: "North Karnataka", crops: ["Cotton", "Maize", "Soybean"] },
+    "vijayapura":        { lat: 16.83, lon: 75.72, zoom: 11, soil: "Black Cotton", zone: "North Karnataka", crops: ["Tur", "Chickpea", "Sorghum"] },
+    "bagalkot":          { lat: 16.18, lon: 75.70, zoom: 11, soil: "Black Cotton", zone: "North Karnataka", crops: ["Sugarcane", "Cotton", "Tur"] },
+    "kalaburagi":        { lat: 17.33, lon: 76.82, zoom: 11, soil: "Black Cotton", zone: "Hyderabad Karnataka", crops: ["Tur", "Groundnut", "Sorghum"] },
+    "raichur":           { lat: 16.20, lon: 77.36, zoom: 11, soil: "Black Cotton", zone: "Hyderabad Karnataka", crops: ["Paddy", "Cotton", "Sunflower"] },
+    "bidar":             { lat: 17.91, lon: 77.52, zoom: 11, soil: "Black Cotton", zone: "Hyderabad Karnataka", crops: ["Tur", "Sorghum", "Chickpea"] },
+    "yadgir":            { lat: 16.77, lon: 77.13, zoom: 11, soil: "Black Cotton", zone: "Hyderabad Karnataka", crops: ["Tur", "Groundnut", "Cotton"] },
+    "koppal":            { lat: 15.35, lon: 76.15, zoom: 11, soil: "Black Cotton", zone: "Hyderabad Karnataka", crops: ["Paddy", "Cotton", "Sunflower"] },
+    "ballari":           { lat: 15.14, lon: 76.92, zoom: 11, soil: "Red Laterite", zone: "Hyderabad Karnataka", crops: ["Cotton", "Groundnut", "Tur"] },
+    "mangaluru":         { lat: 12.87, lon: 74.88, zoom: 11, soil: "Sandy Loam",   zone: "Coastal Karnataka", crops: ["Coconut", "Arecanut", "Pepper", "Paddy"] },
+    "udupi":             { lat: 13.34, lon: 74.75, zoom: 11, soil: "Sandy Loam",   zone: "Coastal Karnataka", crops: ["Coconut", "Arecanut", "Paddy"] },
+    "shivamogga":        { lat: 13.93, lon: 75.57, zoom: 11, soil: "Alluvial",     zone: "South Karnataka", crops: ["Paddy", "Maize", "Arecanut"] },
+    "chikkamagaluru":    { lat: 13.32, lon: 75.78, zoom: 11, soil: "Red Laterite", zone: "South Karnataka", crops: ["Coffee", "Paddy", "Potato"] },
+    "davanagere":        { lat: 14.46, lon: 75.92, zoom: 11, soil: "Alluvial",     zone: "South Karnataka", crops: ["Paddy", "Maize", "Cotton"] },
+    "chitradurga":       { lat: 14.23, lon: 76.40, zoom: 11, soil: "Red Laterite", zone: "South Karnataka", crops: ["Groundnut", "Sunflower", "Ragi"] },
+  };
+
+  const SOIL_COLORS = {
+    "Red Laterite":  "#C0392B",
+    "Black Cotton":  "#2C3E50",
+    "Alluvial":      "#27AE60",
+    "Sandy Loam":    "#E67E22",
+  };
+
+  // ── Map setup ──────────────────────────────────────────────────────────────
+  const map = L.map('map', { zoomControl: true }).setView([15.0, 76.5], 7);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 18,
+  }).addTo(map);
+
+  // Karnataka boundary outline (approximate bounding box overlay)
+  const karnatakaStyle = { color: '#2D6A4F', weight: 2, fill: false, dashArray: '6,4' };
+
+  let currentMarker = null;
+  let currentCircle = null;
+
+  function zoomToDistrict(districtKey) {
+    const d = DISTRICTS[districtKey];
+    if (!d) return;
+
+    // Remove previous marker
+    if (currentMarker) { map.removeLayer(currentMarker); }
+    if (currentCircle) { map.removeLayer(currentCircle); }
+
+    // Smooth zoom
+    map.flyTo([d.lat, d.lon], d.zoom, { duration: 1.5 });
+
+    // Custom marker
+    const soilColor = SOIL_COLORS[d.soil] || '#2D6A4F';
+
+    const icon = L.divIcon({
+      html: `<div style="
+        background: ${soilColor};
+        width: 36px; height: 36px;
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        border: 3px solid white;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.3);
+      "></div>`,
+      iconSize: [36, 36],
+      iconAnchor: [18, 36],
+      className: '',
+    });
+
+    currentMarker = L.marker([d.lat, d.lon], { icon })
+      .addTo(map)
+      .bindPopup(`
+        <div style="font-family: 'Source Sans 3', sans-serif; min-width: 160px;">
+          <div style="font-weight: 600; font-size: 14px; color: #1B4332; margin-bottom: 6px;">
+            ${districtKey.charAt(0).toUpperCase() + districtKey.slice(1)}
+          </div>
+          <div style="font-size: 11px; color: #6B7280; margin-bottom: 4px;">
+            🪨 ${d.soil} Soil
+          </div>
+          <div style="font-size: 11px; color: #6B7280; margin-bottom: 4px;">
+            🗺️ ${d.zone}
+          </div>
+          <div style="font-size: 11px; color: #2D6A4F;">
+            🌾 ${d.crops.slice(0,3).join(', ')}
+          </div>
+        </div>
+      `, { maxWidth: 200 })
+      .openPopup();
+
+    // Soft radius circle
+    currentCircle = L.circle([d.lat, d.lon], {
+      radius: 15000,
+      color: soilColor,
+      fillColor: soilColor,
+      fillOpacity: 0.08,
+      weight: 1.5,
+      dashArray: '4,4',
+    }).addTo(map);
+
+    // Update district info panel
+    updateDistrictInfo(districtKey, d);
+
+    // Update map subtitle
+    document.getElementById('mapSubtitle').textContent =
+      `📍 ${districtKey.charAt(0).toUpperCase() + districtKey.slice(1)} — ${d.zone}`;
+  }
+
+  function updateDistrictInfo(name, d) {
+    const soilColor = SOIL_COLORS[d.soil] || '#2D6A4F';
+    document.getElementById('districtInfo').innerHTML = `
+      <div class="district-chips">
+        <span class="district-chip" style="background:${soilColor}20; border-color:${soilColor}40; color:${soilColor}">
+          🪨 ${d.soil}
+        </span>
+        <span class="district-chip season">🗺️ ${d.zone}</span>
+        ${d.crops.map(c => `<span class="district-chip">🌾 ${c}</span>`).join('')}
+      </div>
+    `;
+  }
+
+  function detectDistrict(text) {
+    const lower = text.toLowerCase();
+    for (const key of Object.keys(DISTRICTS)) {
+      if (lower.includes(key)) return key;
+    }
+    // Also check common variations
+    const aliases = {
+      "bangalore": "bengaluru", "mysore": "mysuru",
+      "belgaum": "belagavi", "hubli": "dharwad",
+      "gulbarga": "kalaburagi", "bijapur": "vijayapura",
+      "ramnagar": "ramanagara", "shimoga": "shivamogga",
+      "bellary": "ballari", "mangalore": "mangaluru",
+    };
+    for (const [alias, key] of Object.entries(aliases)) {
+      if (lower.includes(alias)) return key;
+    }
+    return null;
+  }
+
+  // ── Session management ─────────────────────────────────────────────────────
+  async function getOrCreateSession() {
+    if (sessionId) return sessionId;
+    const res = await fetch(`${API}/apps/${APP}/users/${USER}/sessions`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({})
+    });
+    if (!res.ok) throw new Error("Could not create session");
+    const data = await res.json();
+    sessionId = data.id;
+    return sessionId;
+  }
+
+  async function newSession() {
+    sessionId = null;
+    document.getElementById("messages").innerHTML = `
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon">🌱</div>
+        <h2>Namaskara, farmer friend!</h2>
+        <p>Ask about crops, pests, soil, weather or prices. Mention a district and watch the map zoom in automatically.</p>
+      </div>`;
+    document.getElementById('mapSubtitle').textContent = 'Mention a district to zoom in automatically';
+    document.getElementById('districtInfo').innerHTML = '<div class="no-district">Ask about a specific district to see soil type, agro-climatic zone, and key crops here.</div>';
+    map.flyTo([15.0, 76.5], 7, { duration: 1.5 });
+    if (currentMarker) { map.removeLayer(currentMarker); currentMarker = null; }
+    if (currentCircle) { map.removeLayer(currentCircle); currentCircle = null; }
+  }
+
+  // ── Send message ───────────────────────────────────────────────────────────
+  async function sendMessage() {
+    const input = document.getElementById("input");
+    const text = input.value.trim();
+    if (!text) return;
+
+    const welcome = document.getElementById("welcome");
+    if (welcome) welcome.remove();
+
+    appendMessage("user", text);
+    input.value = "";
+    autoResize(input);
+
+    // Detect district in user query and zoom map
+    const district = detectDistrict(text);
+    if (district) zoomToDistrict(district);
+
+    const btn = document.getElementById("sendBtn");
+    btn.disabled = true;
+    const typingId = showTyping();
+
+    try {
+      const sid = await getOrCreateSession();
+      const res = await fetch(`${API}/run`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          app_name: APP, user_id: USER, session_id: sid,
+          new_message: { role: "user", parts: [{ text }] }
+        })
+      });
+
+      removeTyping(typingId);
+
+      if (!res.ok) {
+        appendError("Could not reach the agent. Please try again.");
+        return;
+      }
+
+      const events = await res.json();
+      let toolCalls = [];
+      let finalText = "";
+
+      for (const event of events) {
+        const parts = event?.content?.parts || [];
+        for (const part of parts) {
+          if (part.functionCall) toolCalls.push(part.functionCall.name);
+          if (part.text && event?.author === APP) finalText = part.text;
+        }
+      }
+
+      // Also detect district in agent response
+      if (finalText && !district) {
+        const agentDistrict = detectDistrict(finalText);
+        if (agentDistrict) zoomToDistrict(agentDistrict);
+      }
+
+      if (toolCalls.length > 0) showToolCall(toolCalls[0]);
+      if (finalText) appendMessage("agent", finalText);
+      else appendMessage("agent", "I processed your request. Please try rephrasing.");
+
+    } catch (e) {
+      removeTyping(typingId);
+      appendError("Network error: " + e.message);
+    } finally {
+      btn.disabled = false;
+      input.focus();
+    }
+  }
+
+  // ── UI helpers ─────────────────────────────────────────────────────────────
+  function appendMessage(role, text) {
+    const msgs = document.getElementById("messages");
+    const div = document.createElement("div");
+    div.className = `message ${role}`;
+    div.innerHTML = `
+      <div class="avatar ${role}">${role === "agent" ? "🌾" : "👤"}</div>
+      <div class="bubble ${role}">${escapeHtml(text).replace(/\n/g, "<br>")}</div>
+    `;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function appendError(msg) {
+    const msgs = document.getElementById("messages");
+    const div = document.createElement("div");
+    div.className = "message agent";
+    div.innerHTML = `<div class="avatar agent">⚠️</div><div class="error-bubble">${escapeHtml(msg)}</div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  const TOOL_LABELS = {
+    get_advisory: "🔍 get_advisory — vector search",
+    get_weather: "🌦️ get_weather — live forecast",
+    get_mandi_price: "💰 get_mandi_price — market prices",
+    get_crop_advisory: "🌾 get_crop_advisory",
+    get_pest_disease_info: "🐛 get_pest_disease_info",
+    get_soil_recommendation: "🪨 get_soil_recommendation",
+  };
+
+  function showToolCall(toolName) {
+    const msgs = document.getElementById("messages");
+    const div = document.createElement("div");
+    div.className = "tool-call";
+    div.innerHTML = `⚡ ${TOOL_LABELS[toolName] || toolName}`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function showTyping() {
+    const msgs = document.getElementById("messages");
+    const id = "typing-" + Date.now();
+    const div = document.createElement("div");
+    div.id = id; div.className = "message agent";
+    div.innerHTML = `<div class="avatar agent">🌾</div><div class="typing"><span></span><span></span><span></span></div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    return id;
+  }
+
+  function removeTyping(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+  }
+
+  function escapeHtml(t) {
+    return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  function handleKey(e) {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  }
+
+  function autoResize(el) {
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 110) + "px";
+  }
+
+  function sendQuick(btn) {
+    const text = btn.textContent.replace(/^[^\s]+\s/, "").trim();
+    document.getElementById("input").value = text;
+    sendMessage();
+  }
+</script>
+</body>
+</html>
