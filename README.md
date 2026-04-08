@@ -200,3 +200,19 @@ Total GCP cost: **~₹18**
 [LinkedIn](https://linkedin.com/in/rajatchopra91) · Bengaluru, India
 
 *Built with Google ADK · Gemini 2.5 Flash · Cloud Run · pgvector · OpenStreetMap*
+
+## Live Demo
+Agent live at: https://karnataka-agri-advisor-377703486067.asia-south1.run.app/docs
+
+### Quick test — create session then run:
+```bash
+SESSION=$(curl -s -X POST \
+  "https://karnataka-agri-advisor-377703486067.asia-south1.run.app/apps/karnataka_agri_advisor/users/demo/sessions" \
+  -H "Content-Type: application/json" \
+  -d '{}' | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
+
+curl -X POST \
+  "https://karnataka-agri-advisor-377703486067.asia-south1.run.app/run" \
+  -H "Content-Type: application/json" \
+  -d "{\"app_name\":\"karnataka_agri_advisor\",\"user_id\":\"demo\",\"session_id\":\"$SESSION\",\"new_message\":{\"role\":\"user\",\"parts\":[{\"text\":\"My paddy crop has bacterial leaf blight, what should I do?\"}]}}"
+```
